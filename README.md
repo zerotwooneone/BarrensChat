@@ -7,4 +7,4 @@ Attempting to create a simple azure chat server.
 ### Azure
 You must create a Notification Hub in Azure and take note of the DefaultFullSharedAccessSignature located in the 'Access Policies' section of settings.
 ### Dev
-You must add a value to user secrets with a key of "Publish-AccessSignature" and a value from the above Azure Notification Hub Full-Access-Signature
+You must add a value to user secrets with a keys of "PrimaryHub:FullAccessToken" and "PrimaryHub:Name" where values come from the above Azure Notification Hub Full-Access-Signature

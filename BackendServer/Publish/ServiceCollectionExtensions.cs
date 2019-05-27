@@ -10,8 +10,9 @@ namespace BackendServer.Publish
         {
             serviceCollection.AddSingleton<NotificationHubClient>(serviceProvider =>
             {
-                var connectionString = configuration["Publish-AccessSignature"];
-                return new NotificationHubClient(connectionString,"primary");
+                var connectionString = configuration["PrimaryHub:FullAccessToken"];
+                var hubName = configuration["PrimaryHub:Name"];
+                return new NotificationHubClient(connectionString, hubName);
             });
             serviceCollection.AddSingleton<IPublishService, NotificationHubPublishService>();
 
