@@ -18,6 +18,7 @@ using System.Net.Http.Headers;
 using Windows.Networking.PushNotifications;
 using Windows.UI.Popups;
 using System.Threading.Tasks;
+using Auth0.OidcClient;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -77,38 +78,18 @@ namespace ChatUw
 
         private async void LoginAndRegisterClick(object sender, RoutedEventArgs e)
         {
-            SetAuthenticationTokenInLocalStorage();
-
-            var channel = await PushNotificationChannelManager.CreatePushNotificationChannelForApplicationAsync();
-
-            // The "username:<user name>" tag gets automatically added by the message handler in the backend.
-            // The tag passed here can be whatever other tags you may want to use.
-            try
+            var client = new Auth0Client(new Auth0ClientOptions
             {
-                // The device handle used is different depending on the device and PNS.
-                // Windows devices use the channel uri as the PNS handle.
-                await new RegisterClient(BACKEND_ENDPOINT).RegisterAsync(channel.Uri, new string[] { "myTag" });
+                Domain = "zerohome.auth0.com",
+                ClientId = "99BTQq42rNM4UDj05sfDLzFhsQAIJkAw"
+            });
 
-                var dialog = new MessageDialog("Registered as: " + UsernameTextBox.Text);
-                dialog.Commands.Add(new UICommand("OK"));
-                await dialog.ShowAsync();
-                SendPushButton.IsEnabled = true;
-            }
-            catch (Exception ex)
-            {
-                MessageDialog alert = new MessageDialog(ex.Message, "Failed to register with RegisterClient");
-                alert.ShowAsync();
-            }
+            var loginResult = await client.LoginAsync();
+
+            int x = 0;
+
         }
-
-        private void SetAuthenticationTokenInLocalStorage()
-        {
-            string username = UsernameTextBox.Text;
-            string password = PasswordTextBox.Password;
-
-            var token = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(username + ":" + password));
-            ApplicationData.Current.LocalSettings.Values["AuthenticationToken"] = token;
-        }
+        
     }
 
 }

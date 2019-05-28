@@ -13,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using BackendServer.Data;
 using BackendServer.Publish;
 using BackendServer.Register;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -45,11 +46,20 @@ namespace BackendServer
                 .AddEntityFrameworkStores<ApplicationDbContext>();
 
             services
-                .AddAuthentication()
+                .AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
                 .AddGoogle(googleOptions =>
                 {
                     googleOptions.ClientId = Configuration["Authentication:Google:ClientId"];
                     googleOptions.ClientSecret = Configuration["Authentication:Google:ClientSecret"];
+                })
+                .AddJwtBearer(options =>
+                {
+                    options.Authority = $"https://{Configuration["Auth0:Domain"]}";
+                    options.Audience = Configuration["Auth0:ClientId"];
                 });
 
             services.AddPublish(Configuration);

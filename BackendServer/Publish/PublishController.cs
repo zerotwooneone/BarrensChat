@@ -12,7 +12,7 @@ namespace BackendServer.Publish
     public class PublishController : ControllerBase
     {
         private readonly HubClientFactory _hubClientFactory;
-
+        
         public PublishController(HubClientFactory hubClientFactory)
         {
             _hubClientFactory = hubClientFactory;
@@ -21,6 +21,12 @@ namespace BackendServer.Publish
         [HttpPost]
         public async Task<IActionResult> Post(PublishModel publishModel)
         {
+            const int arbitraryLengthLimit = 240;
+            if (string.IsNullOrWhiteSpace(publishModel.to_tag)) return BadRequest("Must provide a target user");
+            if (publishModel.to_tag.Length > arbitraryLengthLimit) return BadRequest("Target user name invalid");
+            if (string.IsNullOrWhiteSpace(publishModel.message)) return BadRequest("Must provide a message");
+            if (publishModel.message.Length > arbitraryLengthLimit) return BadRequest("Message too long");
+
             var user = HttpContext.User.Identity.Name;
             string[] userTag = new string[2];
             userTag[0] = "username:" + publishModel.to_tag;
