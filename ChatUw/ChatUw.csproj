@@ -126,6 +126,11 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="NotificationHub\IRegistrationCache.cs" />
+    <Compile Include="Settings\SettingsCache.cs" />
+    <Compile Include="Http\HttpClientFactory.cs" />
+    <Compile Include="Http\IAuthenticationCache.cs" />
+    <Compile Include="Http\LocalHostTestHttpClientFactory.cs" />
     <Compile Include="Http\WinRtHttpClientHandler.cs" />
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>

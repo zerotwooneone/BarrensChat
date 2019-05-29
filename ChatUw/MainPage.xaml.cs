@@ -9,6 +9,8 @@ using Windows.UI.Popups;
 using System.Threading.Tasks;
 using Windows.Networking.PushNotifications;
 using Auth0.OidcClient;
+using ChatUw.Http;
+using ChatUw.Settings;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -68,15 +70,17 @@ namespace ChatUw
 
         private async void LoginAndRegisterClick(object sender, RoutedEventArgs e)
         {
-            await SetAuthenticationTokenInLocalStorage();
+            var settingsCache = SettingsCache.GetInstance();
+            await SetAuthenticationTokenInLocalStorage(settingsCache);
 
             var channel = await PushNotificationChannelManager.CreatePushNotificationChannelForApplicationAsync();
 
-            var registerClient = new RegisterClient(BACKEND_ENDPOINT);
+            var httpClientFactory = new LocalHostTestHttpClientFactory();
+            var registerClient = new RegisterClient(BACKEND_ENDPOINT, httpClientFactory, settingsCache, settingsCache);
             await registerClient.RegisterAsync(channel.Uri, new List<string>());
         }
 
-        private async Task SetAuthenticationTokenInLocalStorage()
+        private async Task SetAuthenticationTokenInLocalStorage(IAuthenticationCache authenticationCache)
         {
             var client = new Auth0Client(new Auth0ClientOptions
             {
@@ -86,7 +90,7 @@ namespace ChatUw
 
             var loginResult = await client.LoginAsync();
 
-            ApplicationData.Current.LocalSettings.Values["AuthenticationToken"] = loginResult.IdentityToken;
+            authenticationCache.SetAuthenticationToken(loginResult.IdentityToken);
         }
 
     }

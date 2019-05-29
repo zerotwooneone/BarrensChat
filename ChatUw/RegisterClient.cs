@@ -3,19 +3,20 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Windows.Storage;
 using System.Net;
 using System.Net.Http;
-using Windows.Security.Cryptography.Certificates;
-using Windows.Web.Http.Filters;
 using ChatUw.Http;
+using ChatUw.NotificationHub;
 using Newtonsoft.Json;
 
 namespace ChatUw
 {
-    class RegisterClient
+    public class RegisterClient
     {
-        private string POST_URL;
+        private readonly HttpClientFactory _httpClientFactory;
+        private readonly IAuthenticationCache _authenticationCache;
+        private readonly IRegistrationCache _registrationCache;
+        private readonly Uri _postUri;
 
         private class DeviceRegistration
         {
@@ -24,9 +25,16 @@ namespace ChatUw
             public string[] Tags { get; set; }
         }
 
-        public RegisterClient(string backendEndpoint)
+        public RegisterClient(string backendEndpoint,
+            HttpClientFactory httpClientFactory,
+            IAuthenticationCache authenticationCache,
+            IRegistrationCache registrationCache)
         {
-            POST_URL = backendEndpoint + "/api/register";
+            _httpClientFactory = httpClientFactory;
+            _authenticationCache = authenticationCache;
+            _registrationCache = registrationCache;
+            var backendUri = new Uri(backendEndpoint);
+            _postUri = new Uri(backendUri, "/api/register"); ;
         }
 
         public async Task RegisterAsync(string handle, IEnumerable<string> tags)
@@ -45,8 +53,7 @@ namespace ChatUw
             if (statusCode == HttpStatusCode.Gone)
             {
                 // regId is expired, deleting from local storage & recreating
-                var settings = ApplicationData.Current.LocalSettings.Values;
-                settings.Remove("__NHRegistrationId");
+                _registrationCache.SetRegistrationId(null);
                 regId = await RetrieveRegistrationIdOrRequestNewOneAsync();
                 statusCode = await UpdateRegistrationAsync(regId, deviceRegistration);
             }
@@ -60,10 +67,9 @@ namespace ChatUw
 
         private async Task<HttpStatusCode> UpdateRegistrationAsync(string regId, DeviceRegistration deviceRegistration)
         {
-            var settings = ApplicationData.Current.LocalSettings.Values;
-            using (var httpClient = CreateHttpClient((string)settings["AuthenticationToken"]))
+            using (var httpClient = _httpClientFactory.CreateHttpClient(_authenticationCache.GetAuthenticationToken()))
             {
-                var putUri = POST_URL + "/" + regId;
+                var putUri = new Uri(_postUri, $"/api/register/{regId}");
 
                 string json = JsonConvert.SerializeObject(deviceRegistration);
                 var response = await httpClient.PutAsync(putUri, new StringContent(json, Encoding.UTF8, "application/json"));
@@ -73,16 +79,15 @@ namespace ChatUw
 
         private async Task<string> RetrieveRegistrationIdOrRequestNewOneAsync()
         {
-            var settings = ApplicationData.Current.LocalSettings.Values;
-            if (!settings.ContainsKey("__NHRegistrationId"))
+            if (!_registrationCache.HasRegistrationId())
             {
-                using (var httpClient = CreateHttpClient((string)settings["AuthenticationToken"]))
+                using (var httpClient = _httpClientFactory.CreateHttpClient(_authenticationCache.GetAuthenticationToken()))
                 {
-                    var response = await httpClient.PostAsync(POST_URL, new StringContent(""));
+                    var response = await httpClient.PostAsync(_postUri, new StringContent(""));
                     if (response.IsSuccessStatusCode)
                     {
                         string regId = await response.Content.ReadAsStringAsync();
-                        settings["__NHRegistrationId"] = regId;
+                        _registrationCache.SetRegistrationId(regId);
                     }
                     else
                     {
@@ -90,34 +95,10 @@ namespace ChatUw
                     }
                 }
             }
-            return (string)settings["__NHRegistrationId"];
+            return _registrationCache.GetRegistrationId();;
 
         }
 
-        private static HttpClient CreateHttpClient(string bearerToken = null)
-        {
-            var httpMessageHandler = GetLocalHostSslHack();
-            var httpClient = new HttpClient(httpMessageHandler);
-            if (!string.IsNullOrWhiteSpace(bearerToken))
-            {
-                httpClient.SetBearerToken(bearerToken);
-            }
 
-            return httpClient;
-        }
-
-        
-        /// <summary>
-        /// This should not be used in production code
-        /// </summary>
-        /// <returns></returns>
-        [Obsolete("this is only meant for localhost testing")]
-        private static HttpMessageHandler GetLocalHostSslHack()
-        {
-            var filter = new HttpBaseProtocolFilter(); // do something with this
-            filter.IgnorableServerCertificateErrors.Add(ChainValidationResult.Untrusted);
-            var winRtHttpClientHandler = new WinRtHttpClientHandler(filter);
-            return winRtHttpClientHandler;
-        }
     }
 }
