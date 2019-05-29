@@ -1,23 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Navigation;
 using System.Net.Http;
 using Windows.Storage;
 using System.Net.Http.Headers;
-using Windows.Networking.PushNotifications;
 using Windows.UI.Popups;
 using System.Threading.Tasks;
+using Windows.Networking.PushNotifications;
 using Auth0.OidcClient;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
@@ -78,6 +68,16 @@ namespace ChatUw
 
         private async void LoginAndRegisterClick(object sender, RoutedEventArgs e)
         {
+            await SetAuthenticationTokenInLocalStorage();
+
+            var channel = await PushNotificationChannelManager.CreatePushNotificationChannelForApplicationAsync();
+
+            var registerClient = new RegisterClient(BACKEND_ENDPOINT);
+            await registerClient.RegisterAsync(channel.Uri, new List<string>());
+        }
+
+        private async Task SetAuthenticationTokenInLocalStorage()
+        {
             var client = new Auth0Client(new Auth0ClientOptions
             {
                 Domain = "zerohome.auth0.com",
@@ -86,10 +86,9 @@ namespace ChatUw
 
             var loginResult = await client.LoginAsync();
 
-            int x = 0;
-
+            ApplicationData.Current.LocalSettings.Values["AuthenticationToken"] = loginResult.IdentityToken;
         }
-        
+
     }
 
 }

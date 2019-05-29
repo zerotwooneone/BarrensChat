@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 using Windows.Storage;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
+using Windows.Security.Cryptography.Certificates;
+using Windows.Web.Http.Filters;
+using ChatUw.Http;
 using Newtonsoft.Json;
-using System.Threading.Tasks;
-using System.Linq;
 
 namespace ChatUw
 {
@@ -60,11 +60,9 @@ namespace ChatUw
 
         private async Task<HttpStatusCode> UpdateRegistrationAsync(string regId, DeviceRegistration deviceRegistration)
         {
-            using (var httpClient = new HttpClient())
+            var settings = ApplicationData.Current.LocalSettings.Values;
+            using (var httpClient = CreateHttpClient((string)settings["AuthenticationToken"]))
             {
-                var settings = ApplicationData.Current.LocalSettings.Values;
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", (string)settings["AuthenticationToken"]);
-
                 var putUri = POST_URL + "/" + regId;
 
                 string json = JsonConvert.SerializeObject(deviceRegistration);
@@ -78,16 +76,13 @@ namespace ChatUw
             var settings = ApplicationData.Current.LocalSettings.Values;
             if (!settings.ContainsKey("__NHRegistrationId"))
             {
-                using (var httpClient = new HttpClient())
+                using (var httpClient = CreateHttpClient((string)settings["AuthenticationToken"]))
                 {
-                    //httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", (string)settings["AuthenticationToken"]);
-
                     var response = await httpClient.PostAsync(POST_URL, new StringContent(""));
                     if (response.IsSuccessStatusCode)
                     {
                         string regId = await response.Content.ReadAsStringAsync();
-                        regId = regId.Substring(1, regId.Length - 2);
-                        settings.Add("__NHRegistrationId", regId);
+                        settings["__NHRegistrationId"] = regId;
                     }
                     else
                     {
@@ -97,6 +92,32 @@ namespace ChatUw
             }
             return (string)settings["__NHRegistrationId"];
 
+        }
+
+        private static HttpClient CreateHttpClient(string bearerToken = null)
+        {
+            var httpMessageHandler = GetLocalHostSslHack();
+            var httpClient = new HttpClient(httpMessageHandler);
+            if (!string.IsNullOrWhiteSpace(bearerToken))
+            {
+                httpClient.SetBearerToken(bearerToken);
+            }
+
+            return httpClient;
+        }
+
+        
+        /// <summary>
+        /// This should not be used in production code
+        /// </summary>
+        /// <returns></returns>
+        [Obsolete("this is only meant for localhost testing")]
+        private static HttpMessageHandler GetLocalHostSslHack()
+        {
+            var filter = new HttpBaseProtocolFilter(); // do something with this
+            filter.IgnorableServerCertificateErrors.Add(ChainValidationResult.Untrusted);
+            var winRtHttpClientHandler = new WinRtHttpClientHandler(filter);
+            return winRtHttpClientHandler;
         }
     }
 }

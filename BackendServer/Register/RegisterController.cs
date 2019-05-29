@@ -55,12 +55,15 @@ namespace BackendServer.Register
             }
 
             if (newRegistrationId == null)
+            {
                 newRegistrationId = await hub.CreateRegistrationIdAsync();
+            }
 
             return newRegistrationId;
         }
 
         [HttpPut]
+        [Route("{id}")]
         // PUT api/register/5
         // This creates or updates a registration (with provided channelURI) at the specified id
         public async Task<IActionResult> Put(string id, DeviceRegistration deviceUpdate)
@@ -103,7 +106,6 @@ namespace BackendServer.Register
                 {
                     var response = (HttpWebResponse)webex.Response;
                     if (response.StatusCode == HttpStatusCode.Gone)
-                        //throw new HttpRequestException(HttpStatusCode.Gone.ToString());
                         return StatusCode((int)HttpStatusCode.Gone);
                 }
             }
