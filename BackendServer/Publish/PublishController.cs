@@ -30,6 +30,7 @@ namespace BackendServer.Publish
             var user = HttpContext.User.Identity.Name;
             string[] userTag = new string[2];
             userTag[0] = "username:" + publishModel.to_tag;
+            userTag[0] = "nickname:" + publishModel.to_tag; //this is a hack and should be replaced
             userTag[1] = "from:" + user;
 
             Microsoft.Azure.NotificationHubs.NotificationOutcome outcome = null;

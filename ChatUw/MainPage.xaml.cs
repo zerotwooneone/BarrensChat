@@ -11,6 +11,7 @@ using Windows.Networking.PushNotifications;
 using Auth0.OidcClient;
 using ChatUw.Http;
 using ChatUw.Settings;
+using Newtonsoft.Json;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -44,21 +45,34 @@ namespace ChatUw
 
             }
         }
+        public class PublishModel   
+        {
+            public string pns { get; set; }
+            public string  message { get; set; } 
+            public string  to_tag { get; set; }
+        }
 
         private async Task sendPush(string pns, string userTag, string message)
         {
-            var POST_URL = BACKEND_ENDPOINT + "/api/notifications?pns=" +
-                           pns + "&to_tag=" + userTag;
+            var httpClientFactory = new LocalHostTestHttpClientFactory();
+            var settingsCache = SettingsCache.GetInstance();
+            var POST_URL = $"{BACKEND_ENDPOINT}/api/Publish";
 
-            using (var httpClient = new HttpClient())
+            var publishModel = new PublishModel
             {
-                var settings = ApplicationData.Current.LocalSettings.Values;
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", (string)settings["AuthenticationToken"]);
+                pns = pns,
+                message = message,
+                to_tag = userTag
+            };
 
+            using (var httpClient = httpClientFactory.CreateHttpClient(settingsCache.GetAuthenticationToken()))
+            {
                 try
                 {
-                    await httpClient.PostAsync(POST_URL, new StringContent("\"" + message + "\"",
-                        System.Text.Encoding.UTF8, "application/json"));
+                    var json = JsonConvert.SerializeObject(publishModel);
+                    var content = new StringContent(json,
+                        System.Text.Encoding.UTF8, "application/json");
+                    var response = await httpClient.PostAsync(POST_URL, content);
                 }
                 catch (Exception ex)
                 {

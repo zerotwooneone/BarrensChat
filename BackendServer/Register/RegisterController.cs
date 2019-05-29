@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using BackendServer.HubClient;
@@ -89,15 +90,17 @@ namespace BackendServer.Register
 
             registration.RegistrationId = id;
             var username = HttpContext.User.Identity.Name;
+            var nickname = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "nickname")?.Value;
 
             // add check if user is allowed to add these tags
             registration.Tags = new HashSet<string>(deviceUpdate.Tags);
             registration.Tags.Add("username:" + username);
+            registration.Tags.Add("nickname:" + nickname);
 
             try
             {
                 var hub = _hubClientFactory.Primary;
-                await hub.CreateOrUpdateRegistrationAsync(registration);
+                var registrationDescription = await hub.CreateOrUpdateRegistrationAsync(registration);
             }
             catch (MessagingException e)
             {
