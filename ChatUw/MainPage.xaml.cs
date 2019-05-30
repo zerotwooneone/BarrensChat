@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using System.Net.Http;
@@ -22,8 +23,6 @@ namespace ChatUw
     /// </summary>
     public sealed partial class MainPage : Page
     {
-        private const string BACKEND_ENDPOINT = "https://localhost:44309";
-
         public MainPage()
         {
             this.InitializeComponent();
@@ -31,36 +30,17 @@ namespace ChatUw
 
         private async void PushClick(object sender, RoutedEventArgs e)
         {
-            if (toggleWNS.IsChecked.Value)
-            {
-                await sendPush("wns", ToUserTagTextBox.Text, this.NotificationMessageTextBox.Text);
-            }
-            if (toggleFCM.IsChecked.Value)
-            {
-                await sendPush("fcm", ToUserTagTextBox.Text, this.NotificationMessageTextBox.Text);
-            }
-            if (toggleAPNS.IsChecked.Value)
-            {
-                await sendPush("apns", ToUserTagTextBox.Text, this.NotificationMessageTextBox.Text);
-
-            }
+            await sendPush(ToUserTagTextBox.Text, this.NotificationMessageTextBox.Text);
         }
-        public class PublishModel   
-        {
-            public string pns { get; set; }
-            public string  message { get; set; } 
-            public string  to_tag { get; set; }
-        }
-
-        private async Task sendPush(string pns, string userTag, string message)
+        
+        private async Task sendPush(string userTag, string message)
         {
             var httpClientFactory = new LocalHostTestHttpClientFactory();
             var settingsCache = SettingsCache.GetInstance();
-            var POST_URL = $"{BACKEND_ENDPOINT}/api/Publish";
+            var POST_URL = $"{MagicValues.BackendUrl}/api/Publish";
 
             var publishModel = new PublishModel
             {
-                pns = pns,
                 message = message,
                 to_tag = userTag
             };
@@ -76,7 +56,7 @@ namespace ChatUw
                 }
                 catch (Exception ex)
                 {
-                    MessageDialog alert = new MessageDialog(ex.Message, "Failed to send " + pns + " message");
+                    MessageDialog alert = new MessageDialog(ex.Message, "Failed to send message");
                     alert.ShowAsync();
                 }
             }
@@ -84,29 +64,67 @@ namespace ChatUw
 
         private async void LoginAndRegisterClick(object sender, RoutedEventArgs e)
         {
-            var settingsCache = SettingsCache.GetInstance();
-            await SetAuthenticationTokenInLocalStorage(settingsCache);
+            try
+            {
+                var settingsCache = SettingsCache.GetInstance();
+                await EnsureUserIsLoggedIn(settingsCache);
 
-            var channel = await PushNotificationChannelManager.CreatePushNotificationChannelForApplicationAsync();
+                var channel = await PushNotificationChannelManager.CreatePushNotificationChannelForApplicationAsync();
 
-            var httpClientFactory = new LocalHostTestHttpClientFactory();
-            var registerClient = new RegisterClient(BACKEND_ENDPOINT, httpClientFactory, settingsCache, settingsCache);
-            await registerClient.RegisterAsync(channel.Uri, new List<string>());
+                channel.PushNotificationReceived += OnPushNotificationReceived;
+
+                var httpClientFactory = new LocalHostTestHttpClientFactory();
+                var registerClient = new RegisterClient(MagicValues.BackendUrl, httpClientFactory, settingsCache, settingsCache);
+                await registerClient.RegisterAsync(channel.Uri, new List<string>());
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine(exception);
+            }
         }
 
-        private async Task SetAuthenticationTokenInLocalStorage(IAuthenticationCache authenticationCache)
+        private async Task EnsureUserIsLoggedIn(IAuthenticationCache authenticationCache)
+        {
+            var authenticationToken = authenticationCache.GetAuthenticationToken();
+
+            var expired = IsExpired(authenticationToken);
+
+            if (string.IsNullOrWhiteSpace(authenticationToken) || expired)
+            {
+                if (await SetAuthenticationTokenInLocalStorage(authenticationCache)) return;
+                throw new ApplicationException("You must log in to use this app.");
+            }
+        }
+
+        private static bool IsExpired(string authenticationToken)
+        {
+            var jwtHandler = new JwtSecurityTokenHandler();
+            var jwtToken = jwtHandler.ReadToken(authenticationToken);
+            var exp = jwtToken.ValidTo;
+            var expired = exp < DateTime.UtcNow;
+            return expired;
+        }
+
+        private void OnPushNotificationReceived(PushNotificationChannel sender, PushNotificationReceivedEventArgs args)
+        {
+            int x = 0;
+
+        }
+
+        private async Task<bool> SetAuthenticationTokenInLocalStorage(IAuthenticationCache authenticationCache)
         {
             var client = new Auth0Client(new Auth0ClientOptions
             {
-                Domain = "zerohome.auth0.com",
-                ClientId = "99BTQq42rNM4UDj05sfDLzFhsQAIJkAw"
+                Domain = MagicValues.Auth0Domain,
+                ClientId = MagicValues.Auth0ClientId
             });
 
             var loginResult = await client.LoginAsync();
 
             authenticationCache.SetAuthenticationToken(loginResult.IdentityToken);
+            
+            return !loginResult.IsError;
         }
 
     }
-
 }

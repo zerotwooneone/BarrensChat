@@ -126,7 +126,9 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="MagicValues.cs" />
     <Compile Include="NotificationHub\IRegistrationCache.cs" />
+    <Compile Include="PublishModel.cs" />
     <Compile Include="Settings\SettingsCache.cs" />
     <Compile Include="Http\HttpClientFactory.cs" />
     <Compile Include="Http\IAuthenticationCache.cs" />

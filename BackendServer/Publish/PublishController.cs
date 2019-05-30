@@ -1,8 +1,11 @@
-﻿using System.Net;
+﻿using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using BackendServer.HubClient;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Azure.NotificationHubs;
+using Newtonsoft.Json;
 
 namespace BackendServer.Publish
 {
@@ -12,7 +15,7 @@ namespace BackendServer.Publish
     public class PublishController : ControllerBase
     {
         private readonly HubClientFactory _hubClientFactory;
-        
+
         public PublishController(HubClientFactory hubClientFactory)
         {
             _hubClientFactory = hubClientFactory;
@@ -33,29 +36,35 @@ namespace BackendServer.Publish
             userTag[0] = "nickname:" + publishModel.to_tag; //this is a hack and should be replaced
             userTag[1] = "from:" + user;
 
-            Microsoft.Azure.NotificationHubs.NotificationOutcome outcome = null;
-            
-            switch (publishModel.pns?.ToLower())
+            var rawNotification = new RawNotificationModel
             {
-                case "wns":
-                    // Windows 8.1 / Windows Phone 8.1
-                    var toast = @"<toast><visual><binding template=""ToastText01""><text id=""1"">" + 
-                                "From " + user + ": " + publishModel.message + "</text></binding></visual></toast>";
-                    outcome = await _hubClientFactory.Primary.SendWindowsNativeNotificationAsync(toast, userTag);
-                    break;
-                case "apns":
-                    // iOS
-                    var alert = "{\"aps\":{\"alert\":\"" + "From " + user + ": " + publishModel.message + "\"}}";
-                    outcome = await _hubClientFactory.Primary.SendAppleNativeNotificationAsync(alert, userTag);
-                    break;
-                case "fcm":
-                    // Android
-                    var notif = "{ \"data\" : {\"message\":\"" + "From " + user + ": " + publishModel.message + "\"}}";
-                    outcome = await _hubClientFactory.Primary.SendFcmNativeNotificationAsync(notif, userTag);
-                    break;
-                default:
-                    return BadRequest("pns type incorrect");
-            }
+                Message = publishModel.message
+            };
+            var rawJson = JsonConvert.SerializeObject(rawNotification);
+
+            NotificationOutcome outcome;
+            
+            // Windows 8.1 / Windows Phone 8.1
+            var toast = @"<toast><visual><binding template=""ToastText01""><text id=""1"">" +
+                        "From " + user + ": " + publishModel.message + "</text></binding></visual></toast>";
+            outcome = await _hubClientFactory.Primary.SendWindowsNativeNotificationAsync(toast, userTag);
+
+            IDictionary<string, string> wnsHeaders = new Dictionary<string, string> { { "X-WNS-Type", "wns/raw" } };
+            var windowsNotification = new WindowsNotification(rawJson, wnsHeaders);
+            var windowsRawOutcome = await _hubClientFactory.Primary.SendNotificationAsync(
+                windowsNotification, userTag);
+            
+            //    // iOS
+            //    var alert = "{\"aps\":{\"alert\":\"" + "From " + user + ": " + publishModel.message + "\"}}";
+            //    outcome = await _hubClientFactory.Primary.SendAppleNativeNotificationAsync(alert, userTag);
+            //    break;
+            
+            // Android
+            var notif = "{ \"data\" : {\"message\":\"" + "From " + user + ": " + publishModel.message + "\"}}";
+            outcome = await _hubClientFactory.Primary.SendFcmNativeNotificationAsync(notif, userTag);
+            var fcmRawOutcome = await _hubClientFactory.Primary.SendNotificationAsync(
+                new FcmNotification(rawJson), userTag);
+            
 
             if (outcome != null)
             {
@@ -68,12 +77,5 @@ namespace BackendServer.Publish
 
             return StatusCode((int)HttpStatusCode.InternalServerError);
         }
-    }
-
-    public class PublishModel   
-    {
-        public string pns { get; set; }
-        public string  message { get; set; } 
-        public string  to_tag { get; set; }
     }
 }
