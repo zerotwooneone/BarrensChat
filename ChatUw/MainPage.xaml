@@ -5,28 +5,45 @@
     xmlns:local="using:ChatUw"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:message="using:ChatUw.Message"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid>
-    <Grid.RowDefinitions>
-        <RowDefinition Height="Auto"/>
-        <RowDefinition Height="*"/>
-    </Grid.RowDefinitions>
+    <Page.Resources>
+        <DataTemplate x:Key="LocalAuthor">
+            <Border BorderBrush="Blue"
+                    BorderThickness="1"
+                    Background="LightBlue"
+                    Padding="15"
+                    CornerRadius="10"
+                    HorizontalAlignment="Right">
+                <TextBlock Text="{Binding Text, Mode=OneWay}"></TextBlock>
+            </Border>
+        </DataTemplate>
+        <DataTemplate x:Key="RemoteAuthor">
+            <Border BorderBrush="Green"
+                    BorderThickness="1"
+                    Background="LightGreen"
+                    Padding="15"
+                    CornerRadius="10"
+                    HorizontalAlignment="Left">
+                <TextBlock Text="{Binding Text, Mode=OneWay}"></TextBlock>
+            </Border>
+        </DataTemplate>
+        <message:MessageTemplateSelector x:Key="MessageTemplateSelector"
+                                         LocalAuthorTemplate="{StaticResource LocalAuthor}"
+                                         RemoteAuthorTemplate="{StaticResource RemoteAuthor}"/>
+    </Page.Resources>
+    <Grid Padding="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
-    <TextBlock Grid.Row="0" Text="Notify Users" HorizontalAlignment="Center" FontSize="48"/>
-
-    <StackPanel Grid.Row="1" VerticalAlignment="Center">
-        <Grid>
+        <Grid Grid.Row="0" 
+              VerticalAlignment="Top">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -36,19 +53,46 @@
                 <ColumnDefinition></ColumnDefinition>
                 <ColumnDefinition></ColumnDefinition>
             </Grid.ColumnDefinitions>
-            <Button Grid.Row="4" Grid.ColumnSpan="3" HorizontalAlignment="Center" VerticalAlignment="Center"
-                        Content="1. Login and register" Click="LoginAndRegisterClick" Margin="0,0,0,20"/>
-
-            <ToggleButton Name="toggleWNS" Grid.Row="5" Grid.Column="0" HorizontalAlignment="Right" Content="WNS" IsChecked="True" />
-            <ToggleButton Name="toggleFCM" Grid.Row="5" Grid.Column="1" HorizontalAlignment="Center" Content="FCM" />
-            <ToggleButton Name="toggleAPNS" Grid.Row="5" Grid.Column="2" HorizontalAlignment="Left" Content="APNS" />
-
-            <TextBlock Grid.Row="6" Grid.ColumnSpan="3" Text="Username Tag To Send To" FontSize="24" Margin="20,0,20,0"/>
-            <TextBox Name="ToUserTagTextBox" Grid.Row="7" Grid.ColumnSpan="3" Margin="20,0,20,0" TextWrapping="Wrap" />
-            <TextBlock Grid.Row="8" Grid.ColumnSpan="3" Text="Enter Notification Message" FontSize="24" Margin="20,0,20,0"/>
-            <TextBox Name="NotificationMessageTextBox" Grid.Row="9" Grid.ColumnSpan="3" Margin="20,0,20,0" TextWrapping="Wrap" />
-            <Button Grid.Row="10" Grid.ColumnSpan="3" HorizontalAlignment="Center" Content="2. Send push" Click="PushClick" Name="SendPushButton" />
+            <Button Grid.Row="0" Grid.ColumnSpan="3" 
+                    HorizontalAlignment="Center" 
+                    VerticalAlignment="Center"
+                    Content="1. Login and register" 
+                    Click="LoginAndRegisterClick" 
+                    Margin="0,0,0,20"/>
+            <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Text="Username Tag To Send To" FontSize="24" Margin="20,0,20,0"/>
+            <TextBox Name="ToUserTagTextBox" Grid.Row="2" Grid.ColumnSpan="3" Margin="20,0,20,0" TextWrapping="Wrap" />
         </Grid>
-    </StackPanel>
-</Grid>
+        <ScrollViewer Grid.Row="1">
+            <ItemsControl ItemsSource="{Binding Messages, Mode=OneWay}"
+                          ItemTemplateSelector="{StaticResource MessageTemplateSelector}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Vertical"
+                                    Padding="5">
+                        </StackPanel>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
+        </ScrollViewer>
+        <Grid Padding="5" 
+              Grid.Row="2" 
+              VerticalAlignment="Top">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition></ColumnDefinition>
+                <ColumnDefinition Width="Auto"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <TextBox Name="NotificationMessageTextBox"
+                     Grid.Column="0"
+                     TextWrapping="Wrap"
+                     BorderThickness="1"/>
+            <Button HorizontalAlignment="Right"
+                    Grid.Column="1"
+                    Content="Send" 
+                    Margin="-1 0 0 0"
+                    Click="PushClick" />
+        </Grid>
+    </Grid>
 </Page>

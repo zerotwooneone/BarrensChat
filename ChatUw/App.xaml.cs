@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
@@ -17,6 +18,7 @@ using Windows.UI.Xaml.Navigation;
 using Windows.Networking.PushNotifications;
 using Microsoft.WindowsAzure.Messaging;
 using Windows.UI.Popups;
+using ChatUw.Message;
 
 namespace ChatUw
 {
@@ -70,6 +72,19 @@ namespace ChatUw
                     // configuring the new page by passing required information as a navigation
                     // parameter
                     rootFrame.Navigate(typeof(MainPage), e.Arguments);
+                }
+
+                var mainPage = rootFrame.Content as MainPage;
+                if (mainPage != null)
+                {
+                    var messageViewmodelFactory = new ViewmodelFactory();
+                    var messageViewmodels = new ObservableCollection<MessageViewmodel>
+                    {
+                        new MessageViewmodel("message 1", true),
+                        new MessageViewmodel("message 2", false)
+                    };
+                    mainPage.DataContext = new MainPageViewmodel(messageViewmodels, 
+                        messageViewmodelFactory);
                 }
                 // Ensure the current window is active
                 Window.Current.Activate();

@@ -127,6 +127,11 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="MagicValues.cs" />
+    <Compile Include="MainPageViewmodel.cs" />
+    <Compile Include="Message\IMessageViewmodelFactory.cs" />
+    <Compile Include="Message\MessageTemplateSelector.cs" />
+    <Compile Include="Message\MessageViewmodel.cs" />
+    <Compile Include="Message\ViewmodelFactory.cs" />
     <Compile Include="NotificationHub\IRegistrationCache.cs" />
     <Compile Include="PublishModel.cs" />
     <Compile Include="Settings\SettingsCache.cs" />
