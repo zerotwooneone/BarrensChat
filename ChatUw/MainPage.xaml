@@ -40,7 +40,6 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-
         <Grid Grid.Row="0" 
               VerticalAlignment="Top">
             <Grid.RowDefinitions>
@@ -56,11 +55,19 @@
             <Button Grid.Row="0" Grid.ColumnSpan="3" 
                     HorizontalAlignment="Center" 
                     VerticalAlignment="Center"
-                    Content="1. Login and register" 
-                    Click="LoginAndRegisterClick" 
+                    Content="Login" 
+                    Command="{Binding LoginCommand}"
                     Margin="0,0,0,20"/>
-            <TextBlock Grid.Row="1" Grid.ColumnSpan="3" Text="Username Tag To Send To" FontSize="24" Margin="20,0,20,0"/>
-            <TextBox Name="ToUserTagTextBox" Grid.Row="2" Grid.ColumnSpan="3" Margin="20,0,20,0" TextWrapping="Wrap" />
+            <TextBlock Grid.Row="1" 
+                       Grid.ColumnSpan="3" 
+                       Text="Username Tag To Send To" 
+                       FontSize="24" 
+                       Margin="20,0,20,0"/>
+            <TextBox Name="ToUserTagTextBox" 
+                     Grid.Row="2" 
+                     Grid.ColumnSpan="3" 
+                     Margin="20,0,20,0" 
+                     TextWrapping="Wrap" />
         </Grid>
         <ScrollViewer Grid.Row="1">
             <ItemsControl ItemsSource="{Binding Messages, Mode=OneWay}"
