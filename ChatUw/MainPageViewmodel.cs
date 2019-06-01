@@ -8,11 +8,14 @@ namespace ChatUw
     {
         private readonly IMessageViewmodelFactory _messageViewmodelFactory;
 
-        public MainPageViewmodel(ObservableCollection<MessageViewmodel> messages,
-            IMessageViewmodelFactory messageViewmodelFactory)
+        public MainPageViewmodel(IMessageViewmodelFactory messageViewmodelFactory)
         {
             _messageViewmodelFactory = messageViewmodelFactory;
-            Messages = messages;
+            Messages = new ObservableCollection<MessageViewmodel>
+            {
+                new MessageViewmodel("message 1", true),
+                new MessageViewmodel("message 2", false)
+            };
         }
 
         public ObservableCollection<MessageViewmodel> Messages { get; private set; }

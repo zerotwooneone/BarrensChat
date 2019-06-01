@@ -57,7 +57,7 @@ namespace ChatUw
                 catch (Exception ex)
                 {
                     MessageDialog alert = new MessageDialog(ex.Message, "Failed to send message");
-                    alert.ShowAsync();
+                    await alert.ShowAsync();
                 }
             }
         }
