@@ -56,6 +56,11 @@ namespace BackendServer
                     googleOptions.ClientId = Configuration["Authentication:Google:ClientId"];
                     googleOptions.ClientSecret = Configuration["Authentication:Google:ClientSecret"];
                 })
+                .AddFacebook(facebookOptions =>
+                {
+                    facebookOptions.AppId = Configuration["Authentication:Facebook:AppId"];
+                    facebookOptions.AppSecret = Configuration["Authentication:Facebook:AppSecret"];
+                })
                 .AddJwtBearer(options =>
                 {
                     options.Authority = $"https://{Configuration["Auth0:Domain"]}";
