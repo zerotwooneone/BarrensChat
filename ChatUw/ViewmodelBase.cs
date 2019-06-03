@@ -12,15 +12,7 @@ namespace ChatUw
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
-        protected ICommand CreateStandardUiCommend(Action onExecute)
-        {
-            return CreateStandardUiCommend((cmd, evtArgs) => onExecute());
-        }
-        protected ICommand CreateStandardUiCommend<T>(Action<T> onExecute)
-        {
-            return CreateStandardUiCommend((cmd, evtArgs) => onExecute((T)evtArgs.Parameter));
-        }
-        protected ICommand CreateStandardUiCommend(TypedEventHandler<XamlUICommand, ExecuteRequestedEventArgs> onExecute)
+        protected ICommand CreateStandardUiCommand(TypedEventHandler<XamlUICommand, ExecuteRequestedEventArgs> onExecute)
         {
             var command = new StandardUICommand();
             command.ExecuteRequested += onExecute;

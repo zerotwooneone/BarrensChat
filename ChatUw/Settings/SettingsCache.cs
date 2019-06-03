@@ -1,7 +1,10 @@
-﻿using Windows.Foundation.Collections;
+﻿using System;
+using Windows.Foundation.Collections;
 using Windows.Storage;
 using ChatUw.Http;
 using ChatUw.NotificationHub;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace ChatUw.Settings
 {
@@ -24,14 +27,20 @@ namespace ChatUw.Settings
             _settings["AuthenticationToken"] = token;
         }
 
-        public string GetRegistrationId()
+        public RegistrationModel GetRegistration()
         {
-            return (string) _settings["__NHRegistrationId"];
+            var json = (string)_settings["RegistrationModel"];
+            if (string.IsNullOrWhiteSpace(json)) return null;
+
+            var obj = (JObject)JsonConvert.DeserializeObject(json);
+            var id = obj.Value<string>("Id");
+            var dateTime = obj.Value<DateTime>("Expiration");
+            return new RegistrationModel(id, dateTime);
         }
 
-        public void SetRegistrationId(string id)
+        public void SetRegistration(RegistrationModel registrationModel)
         {
-            _settings["__NHRegistrationId"] = id;
+            _settings["RegistrationModel"] = JsonConvert.SerializeObject(registrationModel);
         }
     }
 }

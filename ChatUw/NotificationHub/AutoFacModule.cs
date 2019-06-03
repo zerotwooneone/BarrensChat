@@ -11,6 +11,16 @@ namespace ChatUw.NotificationHub
                 .RegisterInstance(SettingsCache.GetInstance())
                 .As<IRegistrationCache>()
                 .SingleInstance();
+            builder
+                .RegisterType<RegistrationService>()
+                .As<IRegistrationService>()
+                .SingleInstance();
+            builder
+                .RegisterType<RegisterClient>()
+                .SingleInstance();
+            builder
+                .RegisterType<PushNotificationChannelProvider>()
+                .SingleInstance();
         }
     }
 }

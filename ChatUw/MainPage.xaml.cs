@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Windows.Networking.PushNotifications;
 using Auth0.OidcClient;
 using ChatUw.Http;
+using ChatUw.Message;
 using ChatUw.Settings;
 using Newtonsoft.Json;
 
@@ -44,7 +45,7 @@ namespace ChatUw
                 message = message,
                 to_tag = userTag
             };
-
+            
             using (var httpClient = httpClientFactory.CreateHttpClient(settingsCache.GetAuthenticationToken()))
             {
                 try

@@ -2,15 +2,16 @@
 {
     public interface IRegistrationCache
     {
-        string GetRegistrationId();
-        void SetRegistrationId(string id);
+        RegistrationModel GetRegistration();
+        void SetRegistration(RegistrationModel registrationModel);
     }
 
     public static class RegistrationCacheExtensions
     {
         public static bool HasRegistrationId(this IRegistrationCache registrationCache)
         {
-            return !string.IsNullOrWhiteSpace(registrationCache.GetRegistrationId());
+            var registrationModel = registrationCache.GetRegistration();
+            return registrationModel != null;
         }
     }
 }

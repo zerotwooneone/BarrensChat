@@ -1,4 +1,4 @@
-﻿namespace ChatUw
+﻿namespace ChatUw.Message
 {
     public class PublishModel
     {
