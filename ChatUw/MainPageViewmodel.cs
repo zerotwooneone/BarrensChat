@@ -48,7 +48,7 @@ namespace ChatUw
             var authenticationToken = _authenticationCache.GetAuthenticationToken();
             var noValidAuthToken = string.IsNullOrWhiteSpace(authenticationToken) || IsExpired(authenticationToken);
             return noValidReg &&
-                noValidAuthToken;
+                noValidAuthToken; 
         }
 
         private async void LoginClicked()
@@ -104,7 +104,8 @@ namespace ChatUw
             var client = new Auth0Client(new Auth0ClientOptions
             {
                 Domain = MagicValues.Auth0Domain,
-                ClientId = MagicValues.Auth0ClientId
+                ClientId = MagicValues.Auth0ClientId,
+                Scope = "openid email profile"
             });
 
             var loginResult = await client.LoginAsync();
