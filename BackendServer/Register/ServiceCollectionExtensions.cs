@@ -12,6 +12,8 @@ namespace BackendServer.Register
             var primary = HubClientFactory.CreatePrimary(configuration);
             serviceCollection
                 .TryAddSingleton(sp=>new HubClientFactory(primary));
+            serviceCollection
+                .TryAddSingleton<IHubRegistrationService, HubClientRegistrationService>();
 
             return serviceCollection;
         }

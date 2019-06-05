@@ -1,35 +1,25 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using BackendServer.HubClient;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.NotificationHubs;
 using Microsoft.Azure.NotificationHubs.Messaging;
 
 namespace BackendServer.Register
 {
-    [Authorize]
-    [Route("api/[controller]")]
-    [ApiController]
-    public class RegisterController : ControllerBase
+    public class HubClientRegistrationService : IHubRegistrationService
     {
         private readonly HubClientFactory _hubClientFactory;
 
-        public RegisterController(HubClientFactory hubClientFactory)
+        public HubClientRegistrationService(HubClientFactory hubClientFactory)
         {
             _hubClientFactory = hubClientFactory;
         }
-        
-        [HttpPost]
-        // POST api/register
-        // This creates a registration id
-        public async Task<string> Post(string handle = null)
+        public async Task<HubRegistrationModel> CreateHubRegistration(string handle)
         {
             string newRegistrationId = null;
             var hub = _hubClientFactory.Primary;
-
             // make sure there are no existing registrations for this push handle (used for iOS and Android)
             if (handle != null)
             {
@@ -53,47 +43,47 @@ namespace BackendServer.Register
                 newRegistrationId = await hub.CreateRegistrationIdAsync();
             }
 
-            return newRegistrationId;
+            return new HubRegistrationModel
+            {
+                RegistrationId = newRegistrationId
+            };
         }
 
-        [HttpPut]
-        [Route("{id}")]
-        // PUT api/register/5
-        // This creates or updates a registration (with provided channelURI) at the specified id
-        public async Task<IActionResult> Put(string id, DeviceRegistration deviceUpdate)
+        public async Task<UpdateRegistrationResponseModel> UpdateHubRegistration(string handle, PlatFormId platform, string registrationId, string userName)
         {
             RegistrationDescription registration;
-            switch (deviceUpdate.Platform)
+            switch (platform)
             {
-                case "mpns":
-                    registration = new MpnsRegistrationDescription(deviceUpdate.Handle);
+                case PlatFormId.MicrosoftPushNotificationService:
+                    registration = new MpnsRegistrationDescription(handle);
                     break;
-                case "wns":
-                    registration = new WindowsRegistrationDescription(deviceUpdate.Handle);
+                case PlatFormId.WindowsPushNotificationService:
+                    registration = new WindowsRegistrationDescription(handle);
                     break;
-                case "apns":
-                    registration = new AppleRegistrationDescription(deviceUpdate.Handle);
+                case PlatFormId.ApplePushNotificationService:
+                    registration = new AppleRegistrationDescription(handle);
                     break;
-                case "fcm":
-                    registration = new FcmRegistrationDescription(deviceUpdate.Handle);
+                case PlatFormId.FirebaseCloudMessaging:
+                    registration = new FcmRegistrationDescription(handle);
                     break;
                 default:
-                    return BadRequest();
+                    throw new ArgumentOutOfRangeException(nameof(platform));
             }
 
-            registration.RegistrationId = id;
-            var username = HttpContext.User.Identity.Name;
-            var nickname = HttpContext.User.Claims.FirstOrDefault(c => c.Type == "nickname")?.Value;
-
+            registration.RegistrationId = registrationId;
+            
             // add check if user is allowed to add these tags
-            registration.Tags = new HashSet<string>(deviceUpdate.Tags);
-            registration.Tags.Add("username:" + username);
-            registration.Tags.Add("nickname:" + nickname);
+            registration.Tags = new HashSet<string>();
+            registration.Tags.Add("username:" + userName);
 
             try
             {
                 var hub = _hubClientFactory.Primary;
                 var registrationDescription = await hub.CreateOrUpdateRegistrationAsync(registration);
+                return new UpdateRegistrationResponseModel
+                {
+                    RegistrationId = registrationDescription.RegistrationId
+                };
             }
             catch (MessagingException e)
             {
@@ -102,22 +92,19 @@ namespace BackendServer.Register
                 {
                     var response = (HttpWebResponse)webex.Response;
                     if (response.StatusCode == HttpStatusCode.Gone)
-                        return StatusCode((int)HttpStatusCode.Gone);
+                    {
+                        return null;
+                    }
                 }
-            }
 
-            return Ok();
+                throw;
+            }
         }
 
-        [HttpDelete]
-        // DELETE api/register/5
-        public async Task<IActionResult> Delete(string id)
+        public async Task DeleteHubRegistration(string id)
         {
             var hub = _hubClientFactory.Primary;
             await hub.DeleteRegistrationAsync(id);
-            return Ok();
         }
-
-        
     }
 }

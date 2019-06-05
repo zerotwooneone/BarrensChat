@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using BackendServer.Auth0;
+using BackendServer.Authentication;
+using BackendServer.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI;
@@ -67,8 +70,16 @@ namespace BackendServer
                     options.Audience = Configuration["Auth0:ClientId"];
                 });
 
+            services
+                .AddAuthorization(options =>
+                {
+                    options.AddBcAuthentication();
+                });
+
             services.AddPublish(Configuration);
             services.AddRegister(Configuration);
+            services.AddAuth0(Configuration);
+            services.AddBcAuthentication();
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
         }
