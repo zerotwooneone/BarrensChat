@@ -46,7 +46,7 @@ namespace ChatUw
                 to_tag = userTag
             };
             
-            using (var httpClient = httpClientFactory.CreateHttpClient(settingsCache.GetAuthenticationToken()))
+            using (var httpClient = httpClientFactory.CreateHttpClient(settingsCache.GetAuthenticationToken().Token))
             {
                 try
                 {

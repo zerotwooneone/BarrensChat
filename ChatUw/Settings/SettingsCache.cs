@@ -1,6 +1,7 @@
 ﻿using System;
 using Windows.Foundation.Collections;
 using Windows.Storage;
+using ChatUw.Authentication;
 using ChatUw.Http;
 using ChatUw.NotificationHub;
 using Newtonsoft.Json;
@@ -17,14 +18,14 @@ namespace ChatUw.Settings
         {
             _settings = settings;
         }
-        public virtual string GetAuthenticationToken()
+        public virtual AuthModel GetAuthenticationToken()
         {
-            return (string) _settings["AuthenticationToken"];
+            return (AuthModel) _settings["AuthenticationToken"];
         }
 
-        public virtual void SetAuthenticationToken(string token)
+        public virtual void SetAuthenticationToken(AuthModel authModel)
         {
-            _settings["AuthenticationToken"] = token;
+            _settings["AuthenticationToken"] = authModel;
         }
 
         public RegistrationModel GetRegistration()
