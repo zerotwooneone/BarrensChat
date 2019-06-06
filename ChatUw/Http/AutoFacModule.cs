@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using ChatUw.Authentication;
 using ChatUw.Settings;
 
 namespace ChatUw.Http

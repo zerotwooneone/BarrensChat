@@ -31,11 +31,9 @@ namespace BackendServer.AppStartup
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] ColdRequestModel requestModel)
         {
-            if (requestModel == null ||
-                requestModel.DeviceInfo == null ||
+            if (requestModel?.DeviceInfo == null ||
                 string.IsNullOrWhiteSpace(requestModel.DeviceInfo.Handle) ||
-                (requestModel.DeviceInfo.Platform <= PlatFormId.MicrosoftPushNotificationService &&
-                 requestModel.DeviceInfo.Platform > PlatFormId.FirebaseCloudMessaging)) return BadRequest();
+                InvalidPlatForm(requestModel.DeviceInfo.Platform)) return BadRequest();
 
             var reg = await _hubRegistrationService.CreateHubRegistration(requestModel.DeviceInfo.Handle);
 
@@ -54,11 +52,9 @@ namespace BackendServer.AppStartup
         [Authorize(Policy = BarrensChatPolicy.VerifiedEmail)]
         public async Task<IActionResult> PostUser(RegisterUserRequestModel requestModel)
         {
-            if (requestModel == null ||
-                requestModel.DeviceInfo == null ||
-                string.IsNullOrWhiteSpace(requestModel.DeviceInfo.Handle) ||
-                (requestModel.DeviceInfo.Platform <= PlatFormId.MicrosoftPushNotificationService &&
-                 requestModel.DeviceInfo.Platform > PlatFormId.FirebaseCloudMessaging) ||
+            if (requestModel?.DeviceInfo == null || 
+                string.IsNullOrWhiteSpace(requestModel.DeviceInfo.Handle) || 
+                InvalidPlatForm(requestModel.DeviceInfo.Platform) || 
                 string.IsNullOrWhiteSpace(requestModel.UserInfo?.UserName)) return BadRequest();
 
             var email = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
@@ -103,6 +99,12 @@ namespace BackendServer.AppStartup
                     Token = string.Empty
                 },
             });
+        }
+
+        private static bool InvalidPlatForm(PlatFormId platFormId)
+        {
+            return (platFormId <= PlatFormId.MicrosoftPushNotificationService &&
+                    platFormId > PlatFormId.FirebaseCloudMessaging);
         }
 
         private ClientAuthConfigModel GetClientAuthConfigModel()

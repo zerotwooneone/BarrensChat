@@ -1,3 +1,5 @@
+using System;
+using ChatUw.Authentication;
 using ChatUw.Http;
 using ChatUw.Message;
 using ChatUw.NotificationHub;
@@ -12,9 +14,8 @@ namespace ChatUw.Tests
         private MockRepository mockRepository;
 
         private Mock<IMessageViewmodelFactory> mockMessageViewmodelFactory;
-        private Mock<IAuthenticationCache> mockAuthenticationCache;
         private Mock<IRegistrationService> _registrationService;
-        private Mock<HttpClientFactory> mockHttpClientFactory;
+        private Mock<IAuthenticationService> _authenticationService;
 
         [TestInitialize]
         public void TestInitialize()
@@ -22,9 +23,8 @@ namespace ChatUw.Tests
             this.mockRepository = new MockRepository(MockBehavior.Strict);
 
             this.mockMessageViewmodelFactory = this.mockRepository.Create<IMessageViewmodelFactory>();
-            this.mockAuthenticationCache = this.mockRepository.Create<IAuthenticationCache>();
             this._registrationService = this.mockRepository.Create<IRegistrationService>();
-            this.mockHttpClientFactory = this.mockRepository.Create<HttpClientFactory>();
+            _authenticationService = mockRepository.Create<IAuthenticationService>();
         }
 
         [TestCleanup]
@@ -37,18 +37,17 @@ namespace ChatUw.Tests
         {
             return new MainPageViewmodel(
                 this.mockMessageViewmodelFactory.Object,
-                this.mockAuthenticationCache.Object,
                 this._registrationService.Object,
-                this.mockHttpClientFactory.Object);
+                _authenticationService.Object);
         }
 
         [TestMethod]
         public void LoginVisility_BrandNewInstallation_LoginCanExecute()
         {
             // Arrange
-            mockAuthenticationCache
-                .Setup(ac => ac.GetAuthenticationToken())
-                .Returns((string)null);
+            _authenticationService
+                .Setup(ats=>ats.GetValidAuthModel())
+                .Returns((AuthModel)null);
             _registrationService
                 .Setup(rc => rc.GetValidRegistrationFromCache())
                 .Returns((RegistrationModel) null);
@@ -59,6 +58,101 @@ namespace ChatUw.Tests
 
             // Assert
             Assert.AreEqual(true, actual);
+        }
+
+        [TestMethod]
+        public void LoadedCommand_BrandNewInstallation_SetsToken()
+        {
+            var unitUnderTest = this.CreateMainPageViewmodel();
+            _authenticationService
+                .Setup(ats=>ats.GetValidAuthModel())
+                .Returns((AuthModel)null);
+            _registrationService
+                .Setup(rs => rs.GetValidRegistrationFromCache())
+                .Returns((RegistrationModel) null);
+            const string expected = "some token";
+            _authenticationService
+                .Setup(ats => ats.Get3rdPartyAuth())
+                .ReturnsAsync(new LoginModel {Token = expected});
+            _authenticationService
+                .Setup(ats => ats.SetAuthModel(It.IsAny<string>()))
+                .Verifiable();
+
+            // Act
+            unitUnderTest.LoadedCommand.Execute(null);
+
+            // Assert
+            _authenticationService
+                .Verify(ats => ats.SetAuthModel(It.Is<string>(am=>am == expected)), Times.Once);
+        }
+
+        [TestMethod]
+        public void LoadedCommand_RecentlyLoggedIn_SendEnabled()
+        {
+            var unitUnderTest = this.CreateMainPageViewmodel();
+            _authenticationService
+                .Setup(ats=>ats.GetValidAuthModel())
+                .Returns(new AuthModel{Token = "some token"});
+            _registrationService
+                .Setup(rs => rs.GetValidRegistrationFromCache())
+                .Returns(new RegistrationModel("id", DateTime.Parse("2019/06/05")));
+            
+
+            // Act
+            unitUnderTest.LoadedCommand.Execute(null);
+
+            // Assert
+            Assert.IsTrue(unitUnderTest.SendCommand.CanExecute(null));
+        }
+
+        [TestMethod]
+        public void LoadedCommand_RegExpired_RefreshesReg()
+        {
+            var unitUnderTest = this.CreateMainPageViewmodel();
+            const string expected = "some token";
+            _authenticationService
+                .Setup(ats=>ats.GetValidAuthModel())
+                .Returns(new AuthModel{Token = expected});
+            _registrationService
+                .Setup(rs => rs.GetValidRegistrationFromCache())
+                .Returns((RegistrationModel)null);
+            _registrationService
+                .Setup(rs => rs.CreateRegistration(It.IsAny<string>()))
+                .ReturnsAsync("some reg");
+            
+
+            // Act
+            unitUnderTest.LoadedCommand.Execute(null);
+
+            // Assert
+            _registrationService
+                .Verify(rs => rs.CreateRegistration(It.Is<string>(s=>s==expected)), Times.Once);
+        }
+
+        [TestMethod]
+        public void LoadedCommand_AuthExpired_UpdatesRegistration()
+        {
+            var unitUnderTest = this.CreateMainPageViewmodel();
+            const string expected = "some token";
+            _authenticationService
+                .Setup(ats=>ats.GetValidAuthModel())
+                .Returns((AuthModel)null);
+            _registrationService
+                .Setup(rs => rs.GetValidRegistrationFromCache())
+                .Returns(new RegistrationModel("id", DateTime.Parse("2019/06/05")));
+            _authenticationService
+                .Setup(rs => rs.Get3rdPartyAuth())
+                .ReturnsAsync(new LoginModel{Token = expected});
+            _authenticationService
+                .Setup(ats=>ats.SetAuthModel(It.IsAny<string>()))
+                .Returns(new AuthModel{Token = "some token"});
+            
+            // Act
+            unitUnderTest.LoadedCommand.Execute(null);
+
+            // Assert
+            _registrationService
+                .Verify(rs => rs.CreateRegistration(It.Is<string>(s=>s==expected)), Times.Once);
         }
     }
 }

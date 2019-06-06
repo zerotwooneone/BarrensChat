@@ -127,6 +127,10 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Authentication\AuthModel.cs" />
+    <Compile Include="Authentication\IAuthenticationService.cs" />
+    <Compile Include="Authentication\JwtAuthService.cs" />
+    <Compile Include="Authentication\LoginModel.cs" />
     <Compile Include="Command\RelayCommand.cs" />
     <Compile Include="Container\Builder.cs" />
     <Compile Include="Http\AutoFacModule.cs" />
@@ -151,7 +155,7 @@
     <Compile Include="Message\PublishModel.cs" />
     <Compile Include="Settings\SettingsCache.cs" />
     <Compile Include="Http\HttpClientFactory.cs" />
-    <Compile Include="Http\IAuthenticationCache.cs" />
+    <Compile Include="Authentication\IAuthenticationCache.cs" />
     <Compile Include="Http\LocalHostTestHttpClientFactory.cs" />
     <Compile Include="Http\WinRtHttpClientHandler.cs" />
     <Compile Include="MainPage.xaml.cs">
@@ -198,6 +202,9 @@
     </PackageReference>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
       <Version>6.2.8</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Uwp.Managed">
+      <Version>2.0.1</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
       <Version>12.0.2</Version>

@@ -1,53 +1,107 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IdentityModel.Tokens.Jwt;
 using System.Threading.Tasks;
 using System.Windows.Input;
-using Windows.Networking.PushNotifications;
-using Auth0.OidcClient;
+using ChatUw.Authentication;
 using ChatUw.Command;
-using ChatUw.Http;
 using ChatUw.Message;
 using ChatUw.NotificationHub;
-using ChatUw.Settings;
-using IdentityModel.OidcClient;
 
 namespace ChatUw
 {
     public class MainPageViewmodel : ViewmodelBase
     {
         private readonly IMessageViewmodelFactory _messageViewmodelFactory;
-        private readonly IAuthenticationCache _authenticationCache;
         private readonly IRegistrationService _registrationService;
-        private readonly HttpClientFactory _httpClientFactory;
+        private readonly IAuthenticationService _authenticationService;
         public ObservableCollection<MessageViewmodel> Messages { get; }
         public ICommand LoginCommand { get; }
+        public ICommand LoadedCommand { get; }
+        public ICommand SendCommand { get; set; }
 
         public MainPageViewmodel(IMessageViewmodelFactory messageViewmodelFactory,
-            IAuthenticationCache authenticationCache, 
             IRegistrationService registrationService,
-            HttpClientFactory httpClientFactory)
+            IAuthenticationService authenticationService)
         {
             _messageViewmodelFactory = messageViewmodelFactory;
-            _authenticationCache = authenticationCache;
             _registrationService = registrationService;
-            _httpClientFactory = httpClientFactory;
+            _authenticationService = authenticationService;
             Messages = new ObservableCollection<MessageViewmodel>
             {
                 new MessageViewmodel("message 1", true),
                 new MessageViewmodel("message 2", false)
             };
             LoginCommand = new RelayCommand(LoginClicked, LoginEnabled);
-            
+            LoadedCommand = new RelayCommand(OnLoad);
+            SendCommand = new RelayCommand(SendClicked, SendEnabled);
+        }
+        
+        private bool SendEnabled()
+        {
+            var validReg = _registrationService.GetValidRegistrationFromCache() != null;
+            var authenticationToken = _authenticationService.GetValidAuthModel();
+            var validAuthToken = authenticationToken != null;
+            return validReg ||
+                   validAuthToken; 
+        }
+
+        private void SendClicked()
+        {
+            throw new NotImplementedException();
+        }
+
+        private async void OnLoad()
+        {
+            if (LoginEnabled())
+            {
+                try
+                {
+                    var auth = _authenticationService.GetValidAuthModel();
+                    bool hadToAuthenticate;
+                    if (auth == null)
+                    {
+                        auth = await _authenticationService.GetAndSave3rdPartyAuth();
+                        hadToAuthenticate = true;
+                    }
+                    else
+                    {
+                        hadToAuthenticate = false;
+                    }
+
+                    if(auth == null)
+                        throw new ApplicationException("You must log in to use this app.");
+
+                    //var reg = _registrationService.GetValidRegistrationFromCache();
+                    //bool hadToRegister;
+                    //if (reg == null)
+                    //{
+                        var reg = await _registrationService.CreateAndSaveRegistration(auth.Token);
+                    //    hadToRegister = true;
+                    //}
+                    //else
+                    //{
+                    //    hadToRegister = false;
+                    //}
+
+                    //if (hadToAuthenticate &&
+                    //    !hadToRegister)
+                    //{
+                    //    reg = _registrationService.CreateAndSaveRegistration(auth.Token);;
+                    //}
+                }
+                catch (Exception exception)
+                {
+                    Console.WriteLine(exception);
+                }
+            }
         }
 
         private bool LoginEnabled()
         {
             var noValidReg = _registrationService.GetValidRegistrationFromCache() == null;
-            var authenticationToken = _authenticationCache.GetAuthenticationToken();
-            var noValidAuthToken = string.IsNullOrWhiteSpace(authenticationToken) || IsExpired(authenticationToken);
-            return noValidReg &&
+            var authenticationToken = _authenticationService.GetValidAuthModel();
+            var noValidAuthToken = authenticationToken == null;
+            return noValidReg ||
                 noValidAuthToken; 
         }
 
@@ -55,7 +109,7 @@ namespace ChatUw
         {
             try
             {
-                var token = await EnsureUserIsLoggedIn(_authenticationCache);
+                var token = await EnsureUserIsLoggedIn();
 
                 await _registrationService.CreateAndSaveRegistration(token);
             }
@@ -65,51 +119,17 @@ namespace ChatUw
             }
         }
 
-        private async Task<string> EnsureUserIsLoggedIn(IAuthenticationCache authenticationCache)
+        private async Task<string> EnsureUserIsLoggedIn()
         {
-            var authenticationToken = authenticationCache.GetAuthenticationToken();
+            var authenticationToken = _authenticationService.GetValidAuthModel();
 
-            var expired = IsExpired(authenticationToken);
+            if (authenticationToken != null) return authenticationToken.Token;
 
-            if (!string.IsNullOrWhiteSpace(authenticationToken) && !expired) return authenticationToken;
-            
-            var token = await GetLoggedInToken();
-            if (string.IsNullOrWhiteSpace(token))
+            var authModel = await _authenticationService.GetAndSave3rdPartyAuth();
+            if (authModel == null)
                 throw new ApplicationException("You must log in to use this app.");
+            return authModel.Token;
 
-            authenticationCache.SetAuthenticationToken(token);
-            return token;
-
-        }
-
-        private static bool IsExpired(string authenticationToken)
-        {
-            var jwtHandler = new JwtSecurityTokenHandler();
-            var jwtToken = jwtHandler.ReadToken(authenticationToken);
-            var exp = jwtToken.ValidTo;
-            var expired = exp < DateTime.UtcNow;
-            return expired;
-        }
-        
-        private static async Task<string> GetLoggedInToken()
-        {
-            var loginResult = await GetLoginResult();
-
-            var token = loginResult.IsError ? null : loginResult.IdentityToken;
-            return token;
-        }
-
-        private static async Task<LoginResult> GetLoginResult()
-        {
-            var client = new Auth0Client(new Auth0ClientOptions
-            {
-                Domain = MagicValues.Auth0Domain,
-                ClientId = MagicValues.Auth0ClientId,
-                Scope = "openid email profile"
-            });
-
-            var loginResult = await client.LoginAsync();
-            return loginResult;
         }
     }
 }
