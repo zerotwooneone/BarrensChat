@@ -9,20 +9,30 @@ namespace ChatUw.Authentication
     public class JwtAuthService : IAuthenticationService
     {
         private readonly CurrentDateTimeProvider _currentDateTimeProvider;
+        private readonly IAuthenticationCache _authenticationCache;
 
-        public JwtAuthService(CurrentDateTimeProvider currentDateTimeProvider)
+        public JwtAuthService(CurrentDateTimeProvider currentDateTimeProvider,
+            IAuthenticationCache authenticationCache)
         {
             _currentDateTimeProvider = currentDateTimeProvider;
+            _authenticationCache = authenticationCache;
         }
         public AuthModel GetValidAuthModel()
         {
-            throw new System.NotImplementedException();
+            var auth = _authenticationCache.GetAuthenticationToken();
+            var result = auth == null
+                ? null
+                : IsExpired(auth.Token)
+                    ? null
+                    : auth;
+            return result;
         }
 
         public AuthModel SetAuthModel(string token)
         {
             var authModel = new AuthModel{Token = token};
-            throw new System.NotImplementedException();
+            _authenticationCache.SetAuthenticationToken(authModel);
+            return authModel;
         }
 
         public async Task<LoginModel> Get3rdPartyAuth()

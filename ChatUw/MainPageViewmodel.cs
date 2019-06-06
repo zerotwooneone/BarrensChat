@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using ChatUw.Authentication;
+using ChatUw.Backend;
 using ChatUw.Command;
 using ChatUw.Message;
 using ChatUw.NotificationHub;
@@ -14,6 +15,7 @@ namespace ChatUw
         private readonly IMessageViewmodelFactory _messageViewmodelFactory;
         private readonly IRegistrationService _registrationService;
         private readonly IAuthenticationService _authenticationService;
+        private readonly IBackendClient _backendClient;
         public ObservableCollection<MessageViewmodel> Messages { get; }
         public ICommand LoginCommand { get; }
         public ICommand LoadedCommand { get; }
@@ -21,11 +23,13 @@ namespace ChatUw
 
         public MainPageViewmodel(IMessageViewmodelFactory messageViewmodelFactory,
             IRegistrationService registrationService,
-            IAuthenticationService authenticationService)
+            IAuthenticationService authenticationService,
+            IBackendClient backendClient)
         {
             _messageViewmodelFactory = messageViewmodelFactory;
             _registrationService = registrationService;
             _authenticationService = authenticationService;
+            _backendClient = backendClient;
             Messages = new ObservableCollection<MessageViewmodel>
             {
                 new MessageViewmodel("message 1", true),

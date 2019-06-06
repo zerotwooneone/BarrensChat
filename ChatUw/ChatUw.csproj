@@ -128,12 +128,28 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="Authentication\AuthModel.cs" />
+    <Compile Include="Authentication\AutoFacModule.cs" />
     <Compile Include="Authentication\IAuthenticationService.cs" />
     <Compile Include="Authentication\JwtAuthService.cs" />
     <Compile Include="Authentication\LoginModel.cs" />
+    <Compile Include="Backend\AuthenticationModel.cs" />
+    <Compile Include="Backend\AutoFacModule.cs" />
+    <Compile Include="Backend\ClientAuthConfigModel.cs" />
+    <Compile Include="Backend\ColdRequestModel.cs" />
+    <Compile Include="Backend\DeviceRegisterModel.cs" />
+    <Compile Include="Backend\HttpClientBackendClient.cs" />
+    <Compile Include="Backend\HubRegistrationModel.cs" />
+    <Compile Include="Backend\IBackendClient.cs" />
+    <Compile Include="Backend\RegisterUserRequestModel.cs" />
+    <Compile Include="Backend\RegisterUserResponse.cs" />
+    <Compile Include="Backend\StartupResponse.cs" />
+    <Compile Include="Backend\StartupResponseModel.cs" />
+    <Compile Include="Backend\UserRegisterModel.cs" />
     <Compile Include="Command\RelayCommand.cs" />
     <Compile Include="Container\Builder.cs" />
+    <Compile Include="Http\HttpClientExtensions.cs" />
     <Compile Include="Http\AutoFacModule.cs" />
+    <Compile Include="Http\HttpResponseMessage.cs" />
     <Compile Include="MagicValues.cs" />
     <Compile Include="MainPageViewmodel.cs" />
     <Compile Include="Message\AutoFacModule.cs" />

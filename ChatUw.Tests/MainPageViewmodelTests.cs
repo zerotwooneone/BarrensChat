@@ -1,5 +1,6 @@
 using System;
 using ChatUw.Authentication;
+using ChatUw.Backend;
 using ChatUw.Http;
 using ChatUw.Message;
 using ChatUw.NotificationHub;
@@ -16,6 +17,7 @@ namespace ChatUw.Tests
         private Mock<IMessageViewmodelFactory> mockMessageViewmodelFactory;
         private Mock<IRegistrationService> _registrationService;
         private Mock<IAuthenticationService> _authenticationService;
+        private Mock<IBackendClient> _backendClient;
 
         [TestInitialize]
         public void TestInitialize()
@@ -25,6 +27,7 @@ namespace ChatUw.Tests
             this.mockMessageViewmodelFactory = this.mockRepository.Create<IMessageViewmodelFactory>();
             this._registrationService = this.mockRepository.Create<IRegistrationService>();
             _authenticationService = mockRepository.Create<IAuthenticationService>();
+            _backendClient = mockRepository.Create<IBackendClient>();
         }
 
         [TestCleanup]
@@ -38,7 +41,8 @@ namespace ChatUw.Tests
             return new MainPageViewmodel(
                 this.mockMessageViewmodelFactory.Object,
                 this._registrationService.Object,
-                _authenticationService.Object);
+                _authenticationService.Object,
+                _backendClient.Object);
         }
 
         [TestMethod]

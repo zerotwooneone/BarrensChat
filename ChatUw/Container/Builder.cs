@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Autofac;
+using ChatUw.Providers;
 
 namespace ChatUw.Container
 {
@@ -22,7 +23,7 @@ namespace ChatUw.Container
         {
             builder
                 .RegisterType<MainPageViewmodel>();
-
+            
             builder
                 .RegisterAssemblyModules(typeof(MainPage).Assembly);
         }

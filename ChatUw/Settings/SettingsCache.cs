@@ -20,12 +20,12 @@ namespace ChatUw.Settings
         }
         public virtual AuthModel GetAuthenticationToken()
         {
-            return (AuthModel) _settings["AuthenticationToken"];
+            return _settings.Get<AuthModel>("AuthenticationModel");
         }
 
         public virtual void SetAuthenticationToken(AuthModel authModel)
         {
-            _settings["AuthenticationToken"] = authModel;
+            _settings.Set("AuthenticationModel", authModel);
         }
 
         public RegistrationModel GetRegistration()
@@ -42,6 +42,25 @@ namespace ChatUw.Settings
         public void SetRegistration(RegistrationModel registrationModel)
         {
             _settings["RegistrationModel"] = JsonConvert.SerializeObject(registrationModel);
+        }
+    }
+
+    public static class PropertySetExtensions
+    {
+        public static T Get<T>(this IPropertySet propertySet, string key)
+        {
+            var val = (string)propertySet[key];
+
+            if (val == null) return default(T);
+
+            var result = JsonConvert.DeserializeObject<T>(val);
+            return result;
+        }
+
+        public static void Set<T>(this IPropertySet propertySet, string key, T value)
+        {
+            var json = JsonConvert.SerializeObject(value);
+            propertySet[key] = json;
         }
     }
 }

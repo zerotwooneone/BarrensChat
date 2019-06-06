@@ -1,14 +1,13 @@
 ﻿using Autofac;
 
-namespace ChatUw.Http
+namespace ChatUw.Backend
 {
     public class AutoFacModule : Module
     {
         protected override void Load(ContainerBuilder builder)
         {
-            builder
-                .RegisterType<LocalHostTestHttpClientFactory>()
-                .As<HttpClientFactory>();
+            builder.RegisterType<HttpClientBackendClient>()
+                .As<IBackendClient>();
         }
     }
 }
