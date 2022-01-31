@@ -1,7 +1,6 @@
 using System;
 using ChatUw.Authentication;
 using ChatUw.Backend;
-using ChatUw.Http;
 using ChatUw.Message;
 using ChatUw.NotificationHub;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -18,6 +17,9 @@ namespace ChatUw.Tests
         private Mock<IRegistrationService> _registrationService;
         private Mock<IAuthenticationService> _authenticationService;
         private Mock<IBackendClient> _backendClient;
+        //private Mock<INotificationChannelCache> _notificationChannelCache;
+        private Mock<PushNotificationChannelProvider> _pushNotificationChannelProvider;
+        private Mock<IPushNotificationChannel> _pushNotificationChannel;
 
         [TestInitialize]
         public void TestInitialize()
@@ -28,6 +30,9 @@ namespace ChatUw.Tests
             this._registrationService = this.mockRepository.Create<IRegistrationService>();
             _authenticationService = mockRepository.Create<IAuthenticationService>();
             _backendClient = mockRepository.Create<IBackendClient>();
+            //_notificationChannelCache = mockRepository.Create<INotificationChannelCache>();
+            _pushNotificationChannelProvider = mockRepository.Create<PushNotificationChannelProvider>();
+            _pushNotificationChannel = mockRepository.Create<IPushNotificationChannel>();
         }
 
         [TestCleanup]
@@ -42,30 +47,13 @@ namespace ChatUw.Tests
                 this.mockMessageViewmodelFactory.Object,
                 this._registrationService.Object,
                 _authenticationService.Object,
-                _backendClient.Object);
+                _backendClient.Object,
+                //_notificationChannelCache.Object,
+                _pushNotificationChannelProvider.Object);
         }
 
         [TestMethod]
-        public void LoginVisility_BrandNewInstallation_LoginCanExecute()
-        {
-            // Arrange
-            _authenticationService
-                .Setup(ats=>ats.GetValidAuthModel())
-                .Returns((AuthModel)null);
-            _registrationService
-                .Setup(rc => rc.GetValidRegistrationFromCache())
-                .Returns((RegistrationModel) null);
-            var unitUnderTest = this.CreateMainPageViewmodel();
-
-            // Act
-            var actual = unitUnderTest.LoginCommand.CanExecute(null);
-
-            // Assert
-            Assert.AreEqual(true, actual);
-        }
-
-        [TestMethod]
-        public void LoadedCommand_BrandNewInstallation_SetsToken()
+        public void LoadedCommand_BrandNewInstallation_SendsHandle()
         {
             var unitUnderTest = this.CreateMainPageViewmodel();
             _authenticationService
@@ -74,20 +62,40 @@ namespace ChatUw.Tests
             _registrationService
                 .Setup(rs => rs.GetValidRegistrationFromCache())
                 .Returns((RegistrationModel) null);
-            const string expected = "some token";
             _authenticationService
                 .Setup(ats => ats.Get3rdPartyAuth())
-                .ReturnsAsync(new LoginModel {Token = expected});
+                .ReturnsAsync(new LoginModel {Token = "some token", Username = "some username"});
             _authenticationService
-                .Setup(ats => ats.SetAuthModel(It.IsAny<string>()))
+                .Setup(ats => ats.SetAuthModel(It.IsAny<string>(), It.IsAny<string>()))
                 .Verifiable();
+            //_notificationChannelCache
+            //    .Setup(ncc => ncc.GetNotificationChannel())
+            //    .Returns((NotificationChannelModel) null);
+            //_notificationChannelCache
+            //    .Setup(ncc => ncc.SetNotificationChannel(It.IsAny<NotificationChannelModel>()))
+            //    .Verifiable();
+            _pushNotificationChannelProvider
+                .Setup(pcp => pcp.CreateNotificationChannel())
+                .ReturnsAsync(_pushNotificationChannel.Object);
+            const string expected = "some handle";
+            _pushNotificationChannel
+                .SetupGet(pnc => pnc.Uri)
+                .Returns(expected);
+            _backendClient
+                .Setup(bec => bec.AppStartup(It.IsAny<string>()))
+                .ReturnsAsync(new StartupResponse
+                {
+                    ClientAuth = new ClientAuthConfigModel(),
+                    HubRegistration = new HubRegistrationModel(),
+                    IsSuccess = true
+                });
 
             // Act
             unitUnderTest.LoadedCommand.Execute(null);
 
             // Assert
-            _authenticationService
-                .Verify(ats => ats.SetAuthModel(It.Is<string>(am=>am == expected)), Times.Once);
+            _backendClient
+                .Verify(bec => bec.AppStartup(It.Is<string>(s=>s==expected)), Times.Once);
         }
 
         [TestMethod]
@@ -96,7 +104,7 @@ namespace ChatUw.Tests
             var unitUnderTest = this.CreateMainPageViewmodel();
             _authenticationService
                 .Setup(ats=>ats.GetValidAuthModel())
-                .Returns(new AuthModel{Token = "some token"});
+                .Returns(new AuthModel{Token = "some token", Username = "some username"});
             _registrationService
                 .Setup(rs => rs.GetValidRegistrationFromCache())
                 .Returns(new RegistrationModel("id", DateTime.Parse("2019/06/05")));
@@ -116,47 +124,39 @@ namespace ChatUw.Tests
             const string expected = "some token";
             _authenticationService
                 .Setup(ats=>ats.GetValidAuthModel())
-                .Returns(new AuthModel{Token = expected});
+                .Returns(new AuthModel{Token = expected, Username = "some username"});
             _registrationService
                 .Setup(rs => rs.GetValidRegistrationFromCache())
                 .Returns((RegistrationModel)null);
-            _registrationService
-                .Setup(rs => rs.CreateRegistration(It.IsAny<string>()))
-                .ReturnsAsync("some reg");
+            _pushNotificationChannelProvider
+                .Setup(pcp => pcp.CreateNotificationChannel())
+                .ReturnsAsync(_pushNotificationChannel.Object);
+            _pushNotificationChannel
+                .SetupGet(pnc => pnc.Uri)
+                .Returns("some handle");
+            _backendClient
+                .Setup(rs => rs.RegisterUser(It.IsAny<string>(), 
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.IsAny<string>()))
+                .ReturnsAsync(new RegisterUserResponse
+                {
+                    Authentication = new AuthenticationModel(),
+                    ClientAuth = new ClientAuthConfigModel(),
+                    HubRegistration = new HubRegistrationModel()
+                });
             
 
             // Act
             unitUnderTest.LoadedCommand.Execute(null);
 
             // Assert
-            _registrationService
-                .Verify(rs => rs.CreateRegistration(It.Is<string>(s=>s==expected)), Times.Once);
-        }
-
-        [TestMethod]
-        public void LoadedCommand_AuthExpired_UpdatesRegistration()
-        {
-            var unitUnderTest = this.CreateMainPageViewmodel();
-            const string expected = "some token";
-            _authenticationService
-                .Setup(ats=>ats.GetValidAuthModel())
-                .Returns((AuthModel)null);
-            _registrationService
-                .Setup(rs => rs.GetValidRegistrationFromCache())
-                .Returns(new RegistrationModel("id", DateTime.Parse("2019/06/05")));
-            _authenticationService
-                .Setup(rs => rs.Get3rdPartyAuth())
-                .ReturnsAsync(new LoginModel{Token = expected});
-            _authenticationService
-                .Setup(ats=>ats.SetAuthModel(It.IsAny<string>()))
-                .Returns(new AuthModel{Token = "some token"});
-            
-            // Act
-            unitUnderTest.LoadedCommand.Execute(null);
-
-            // Assert
-            _registrationService
-                .Verify(rs => rs.CreateRegistration(It.Is<string>(s=>s==expected)), Times.Once);
+            _backendClient
+                .Verify(rs => rs.RegisterUser(It.IsAny<string>(), 
+                    It.IsAny<string>(),
+                    It.IsAny<string>(),
+                    It.Is<string>(actual=>actual==expected)), 
+                    Times.Once);
         }
     }
 }

@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Threading.Tasks;
-using Windows.Networking.PushNotifications;
 using ChatUw.Providers;
 
 namespace ChatUw.NotificationHub
@@ -41,36 +39,36 @@ namespace ChatUw.NotificationHub
             return registrationModel;
         }
 
-        public async Task<string> CreateRegistration(string token)
-        {
-            var channel = await _pushNotificationChannelProvider.CreateNotificationChannel();
+        //public async Task<string> CreateRegistration(string token)
+        //{
+        //    var channel = await _pushNotificationChannelProvider.CreateNotificationChannel();
 
-            channel.PushNotificationReceived += OnPushNotificationReceived;
+        //    channel.PushNotificationReceived += OnPushNotificationReceived;
 
-            var registrationModel = GetValidRegistrationFromCache();
-            string regId;
-            if (registrationModel ==null)
-            {
-                regId = await _registerClient.RequestNewRegistrationAsync(token);
-            }
-            else
-            {
-                if (await _registerClient.TryUpdateRegistrationAsync(registrationModel.Id, channel.Uri, token))
-                {
-                    regId = registrationModel.Id;
-                }
-                else
-                {
-                    regId = await _registerClient.RequestNewRegistrationAsync(token);
-                }
-            }
+        //    var registrationModel = GetValidRegistrationFromCache();
+        //    string regId;
+        //    if (registrationModel ==null)
+        //    {
+        //        regId = await _registerClient.RequestNewRegistrationAsync(token);
+        //    }
+        //    else
+        //    {
+        //        if (await _registerClient.TryUpdateRegistrationAsync(registrationModel.Id, channel.Uri, token))
+        //        {
+        //            regId = registrationModel.Id;
+        //        }
+        //        else
+        //        {
+        //            regId = await _registerClient.RequestNewRegistrationAsync(token);
+        //        }
+        //    }
 
-            return regId;
-        }
+        //    return regId;
+        //}
 
-        private void OnPushNotificationReceived(PushNotificationChannel sender, PushNotificationReceivedEventArgs args)
-        {
-            int x = 0;
-        }
+        //private void OnPushNotificationReceived(PushNotificationChannel sender, PushNotificationReceivedEventArgs args)
+        //{
+        //    int x = 0;
+        //}
     }
 }

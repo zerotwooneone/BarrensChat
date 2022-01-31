@@ -65,6 +65,9 @@ namespace BackendServer.AppStartup
                 return BadRequest("User could not be created. The username is invalid or is already be in use.");
             }
 
+//this is just for testing~~!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+await ((UserManagerAuthService)_userAuthenticationService).DeleteUserByUsername(requestModel.UserInfo.UserName);
+
             var update = requestModel.Registration?.RegistrationId == null
                 ? null
                 : await _hubRegistrationService.UpdateHubRegistration(new UpdateRegistrationRequestModel
@@ -78,6 +81,7 @@ namespace BackendServer.AppStartup
             if (update == null)
             {
                 //todo: need to pass tags
+Note("consider a createOrUpdate method call here and pass username");
                 reg = await _hubRegistrationService.CreateHubRegistration(requestModel.DeviceInfo.Handle);
             }
             else

@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using Autofac;
-using ChatUw.Providers;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 
 namespace ChatUw.Container
 {
@@ -23,6 +20,10 @@ namespace ChatUw.Container
         {
             builder
                 .RegisterType<MainPageViewmodel>();
+            builder
+                .RegisterInstance(new MemoryCache(new OptionsManager<MemoryCacheOptions>(new OptionsFactory<MemoryCacheOptions>(new List<IConfigureOptions<MemoryCacheOptions>>(), new List<IPostConfigureOptions<MemoryCacheOptions>>()))))
+                .As<IMemoryCache>()
+                .SingleInstance();
             
             builder
                 .RegisterAssemblyModules(typeof(MainPage).Assembly);

@@ -16,6 +16,7 @@ namespace ChatUw
         private readonly IRegistrationService _registrationService;
         private readonly IAuthenticationService _authenticationService;
         private readonly IBackendClient _backendClient;
+        private readonly PushNotificationChannelProvider _pushNotificationChannelProvider;
         public ObservableCollection<MessageViewmodel> Messages { get; }
         public ICommand LoginCommand { get; }
         public ICommand LoadedCommand { get; }
@@ -24,12 +25,15 @@ namespace ChatUw
         public MainPageViewmodel(IMessageViewmodelFactory messageViewmodelFactory,
             IRegistrationService registrationService,
             IAuthenticationService authenticationService,
-            IBackendClient backendClient)
+            IBackendClient backendClient, 
+            //INotificationChannelCache notificationChannelCache,
+            PushNotificationChannelProvider pushNotificationChannelProvider)
         {
             _messageViewmodelFactory = messageViewmodelFactory;
             _registrationService = registrationService;
             _authenticationService = authenticationService;
             _backendClient = backendClient;
+            _pushNotificationChannelProvider = pushNotificationChannelProvider;
             Messages = new ObservableCollection<MessageViewmodel>
             {
                 new MessageViewmodel("message 1", true),
@@ -60,14 +64,37 @@ namespace ChatUw
             {
                 try
                 {
-                    var auth = _authenticationService.GetValidAuthModel() ?? 
-                               await _authenticationService.GetAndSave3rdPartyAuth();
+                    var notificationChannel = await _pushNotificationChannelProvider.CreateNotificationChannel();
+                    var auth = _authenticationService.GetValidAuthModel();
+                    var reg = _registrationService.GetValidRegistrationFromCache();
+
+                    string regId;
+                    if (auth == null && reg == null)
+                    {
+                        var startup = await _backendClient.AppStartup(notificationChannel.Uri);
+                        regId = startup.HubRegistration.RegistrationId;
+                    }
+                    else
+                    {
+                        regId = null;
+                    }
+
+                    auth = auth ?? 
+                           await _authenticationService.GetAndSave3rdPartyAuth();
 
                     if (auth == null)
                         throw new ApplicationException("You must log in to use this app.");
 
-                    var reg = await _registrationService.CreateAndSaveRegistration(auth.Token);
+                    const string someDumbUsername="someDumbUsername";
 
+                    var register = await _backendClient.RegisterUser(notificationChannel.Uri,
+                        regId,
+                        someDumbUsername,
+                        auth.Token);
+
+                    if(!register.IsSuccess) throw new ApplicationException("Failed to register");
+
+                    _registrationService.SetRegistration(register.HubRegistration.RegistrationId);
                 }
                 catch (Exception exception)
                 {
@@ -91,7 +118,7 @@ namespace ChatUw
             {
                 var token = await EnsureUserIsLoggedIn();
 
-                await _registrationService.CreateAndSaveRegistration(token);
+                //await _registrationService.CreateAndSaveRegistration(token);
             }
             catch (Exception exception)
             {

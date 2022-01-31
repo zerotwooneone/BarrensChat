@@ -2,14 +2,15 @@
 using Windows.Foundation.Collections;
 using Windows.Storage;
 using ChatUw.Authentication;
-using ChatUw.Http;
 using ChatUw.NotificationHub;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace ChatUw.Settings
 {
-    public class SettingsCache : IAuthenticationCache, IRegistrationCache
+    public class SettingsCache : IAuthenticationCache, 
+        IRegistrationCache,
+        INotificationChannelCache
     {
         private readonly IPropertySet _settings;
         public static SettingsCache GetInstance() => new SettingsCache(ApplicationData.Current.LocalSettings.Values);
@@ -42,6 +43,16 @@ namespace ChatUw.Settings
         public void SetRegistration(RegistrationModel registrationModel)
         {
             _settings["RegistrationModel"] = JsonConvert.SerializeObject(registrationModel);
+        }
+
+        public NotificationChannelModel GetNotificationChannel()
+        {
+            return _settings.Get<NotificationChannelModel>("NotificationChannel");
+        }
+
+        public void SetNotificationChannel(NotificationChannelModel notificationChannel)
+        {
+            _settings.Set("NotificationChannel", notificationChannel);
         }
     }
 

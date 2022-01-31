@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace ChatUw.NotificationHub
+﻿namespace ChatUw.NotificationHub
 {
     public interface IRegistrationService
     {
@@ -11,17 +9,5 @@ namespace ChatUw.NotificationHub
         RegistrationModel GetValidRegistrationFromCache();
 
         RegistrationModel SetRegistration(string id);
-        Task<string> CreateRegistration(string token);
-    }
-
-    public static class RegistrationServiceExtensions
-    {
-        public static async Task<RegistrationModel> CreateAndSaveRegistration(this IRegistrationService registrationService,
-            string token)
-        {
-            var regId = await registrationService.CreateRegistration(token);
-            var reg = registrationService.SetRegistration(regId);
-            return reg;
-        }
     }
 }

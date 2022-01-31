@@ -28,9 +28,9 @@ namespace ChatUw.Authentication
             return result;
         }
 
-        public AuthModel SetAuthModel(string token)
+        public AuthModel SetAuthModel(string token, string username)
         {
-            var authModel = new AuthModel{Token = token};
+            var authModel = new AuthModel{Token = token, Username = username};
             _authenticationCache.SetAuthenticationToken(authModel);
             return authModel;
         }
@@ -40,9 +40,15 @@ namespace ChatUw.Authentication
             var loginResult = await GetLoginResult();
 
             var token = loginResult.IsError ? null : loginResult.IdentityToken;
-            var result = new LoginModel { Token = token };
+            var result = new LoginModel { Token = token, Username = DummyUserName };
             return result;
         }
+
+        /// <summary>
+        /// This is a placeholder till we get the username from the api during auth
+        /// </summary>
+        public const string DummyUserName = "DummyUserName";
+
         private bool IsExpired(string authenticationToken)
         {
             var jwtHandler = new JwtSecurityTokenHandler();

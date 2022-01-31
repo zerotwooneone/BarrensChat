@@ -5,7 +5,7 @@ namespace ChatUw.Authentication
     public interface IAuthenticationService
     {
         AuthModel GetValidAuthModel();
-        AuthModel SetAuthModel(string token);
+        AuthModel SetAuthModel(string token, string username);
         Task<LoginModel> Get3rdPartyAuth();
     }
 
@@ -17,7 +17,7 @@ namespace ChatUw.Authentication
             
             if (loginModel == null) return null;
             
-            return authenticationService.SetAuthModel(loginModel.Token);
+            return authenticationService.SetAuthModel(loginModel.Token, loginModel.Username);
 
         }
     }
